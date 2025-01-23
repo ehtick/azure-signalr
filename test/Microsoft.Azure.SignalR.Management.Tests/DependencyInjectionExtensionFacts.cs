@@ -31,7 +31,7 @@ public class DependencyInjectionExtensionFacts
 {
     private const string Url = "https://abc";
     private const string AccessKey = "fake_key";
-    private static readonly string TestConnectionString = $"Endpoint={Url};AccessKey={AccessKey};Version=1.0;";
+    private const string TestConnectionString = $"Endpoint={Url};AccessKey={AccessKey};Version=1.0;";
 
     private readonly ITestOutputHelper _outputHelper;
 
@@ -435,7 +435,7 @@ public class DependencyInjectionExtensionFacts
         await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, "http://abc"));
     }
 
-    private class WaitInfinitelyHandler : DelegatingHandler
+    private sealed class WaitInfinitelyHandler : DelegatingHandler
     {
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {

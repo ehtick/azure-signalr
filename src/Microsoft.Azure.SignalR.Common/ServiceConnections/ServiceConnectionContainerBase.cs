@@ -24,11 +24,11 @@ internal abstract class ServiceConnectionContainerBase : IServiceConnectionConta
 
     private static readonly TimeSpan CheckTimeSpan = TimeSpan.FromMinutes(10);
 
-    private static readonly int MaxReconnectBackOffInternalInMilliseconds = 1000;
+    private const int MaxReconnectBackOffInternalInMilliseconds = 1000;
 
     private static readonly TimeSpan MessageWriteRetryDelay = TimeSpan.FromMilliseconds(200);
 
-    private static readonly int MessageWriteMaxRetry = 3;
+    private const int MessageWriteMaxRetry = 3;
 
     // Give (interval * 3 + 1) delay when check value expire.
     private static readonly long DefaultServersPingTimeoutTicks = Stopwatch.Frequency * ((long)Constants.Periods.DefaultServersPingInterval.TotalSeconds * 3 + 1);
@@ -62,7 +62,7 @@ internal abstract class ServiceConnectionContainerBase : IServiceConnectionConta
 
     private volatile bool _hasClients;
 
-    private volatile bool _terminated = false;
+    private volatile bool _terminated;
 
     public HubServiceEndpoint Endpoint { get; }
 
@@ -568,7 +568,7 @@ internal abstract class ServiceConnectionContainerBase : IServiceConnectionConta
         return connection;
     }
 
-    private bool IsActiveConnection(IServiceConnection connection)
+    private static bool IsActiveConnection(IServiceConnection connection)
     {
         return connection != null && connection.Status == ServiceConnectionStatus.Connected;
     }
@@ -720,9 +720,9 @@ internal abstract class ServiceConnectionContainerBase : IServiceConnectionConta
 
         // Considering parallel add endpoints to save time,
         // Add a counter control multiple time call Start() and Stop() correctly.
-        private long _counter = 0;
+        private long _counter;
 
-        private long _lastSendTimestamp = 0;
+        private long _lastSendTimestamp;
 
         private TimerAwaitable _timer;
 
