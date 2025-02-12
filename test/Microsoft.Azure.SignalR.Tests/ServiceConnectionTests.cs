@@ -209,7 +209,7 @@ public class ServiceConnectionTests : VerifiableLoggedTest
 
             var waitClientTask = ccm.WaitForClientConnectionAsync(clientConnectionId);
             await transportConnection.Application.Output.WriteAsync(
-                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, new Claim[0] { }) { Protocol = hubProtocol.Name }));
+                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, Array.Empty<Claim>()) { Protocol = hubProtocol.Name }));
             var clientConnection = await waitClientTask.OrTimeout();
 
             await transportConnection.Application.Output.WriteAsync(
@@ -223,7 +223,7 @@ public class ServiceConnectionTests : VerifiableLoggedTest
 
             waitClientTask = ccm.WaitForClientConnectionAsync(clientConnectionId);
             await transportConnection.Application.Output.WriteAsync(
-                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, new Claim[] { }) { Protocol = hubProtocol.Name }));
+                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, Array.Empty<Claim>()) { Protocol = hubProtocol.Name }));
 
             clientConnection = await waitClientTask.OrTimeout();
 
@@ -268,7 +268,7 @@ public class ServiceConnectionTests : VerifiableLoggedTest
             var clientConnectionId = Guid.NewGuid().ToString();
             var waitClientTask = ccm.WaitForClientConnectionAsync(clientConnectionId);
             await transportConnection.Application.Output.WriteAsync(
-                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, new Claim[] { }) { Protocol = hubProtocol.Name }));
+                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, Array.Empty<Claim>()) { Protocol = hubProtocol.Name }));
 
             var clientConnection = await waitClientTask.OrTimeout();
             // Cancel pending read to end the server connection
@@ -327,7 +327,7 @@ public class ServiceConnectionTests : VerifiableLoggedTest
             var clientConnectionId = Guid.NewGuid().ToString();
             var waitClientTask = ccm.WaitForClientConnectionAsync(clientConnectionId);
             await transportConnection.Application.Output.WriteAsync(
-                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, new Claim[] { }) { Protocol = hubProtocol.Name }));
+                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, Array.Empty<Claim>()) { Protocol = hubProtocol.Name }));
 
             var clientConnection = await waitClientTask.OrTimeout();
 
@@ -402,7 +402,7 @@ public class ServiceConnectionTests : VerifiableLoggedTest
             Assert.Equal(ServiceConnectionStatus.Connected, connection.Status);
             var waitClientTask = ccm.WaitForClientConnectionAsync(clientConnectionId);
             await transportConnection.Application.Output.WriteAsync(
-                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, new Claim[] { }) { Protocol = hubProtocol.Name }));
+                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, Array.Empty<Claim>()) { Protocol = hubProtocol.Name }));
 
             var clientConnection = await waitClientTask.OrTimeout();
 
@@ -472,7 +472,7 @@ public class ServiceConnectionTests : VerifiableLoggedTest
             var clientConnectionId = Guid.NewGuid().ToString();
             var waitClientTask = ccm.WaitForClientConnectionAsync(clientConnectionId);
             await transportConnection.Application.Output.WriteAsync(
-                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, new Claim[] { }) { Protocol = hubProtocol.Name }));
+                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, Array.Empty<Claim>()) { Protocol = hubProtocol.Name }));
 
             var context = await waitClientTask.OrTimeout();
 
@@ -543,7 +543,7 @@ public class ServiceConnectionTests : VerifiableLoggedTest
             var waitClientTask = ccm.WaitForClientConnectionAsync(clientConnectionId);
 
             await transportConnection.Application.Output.WriteAsync(
-                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, new Claim[] { }) { Protocol = hubProtocol.Name }));
+                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, Array.Empty<Claim>()) { Protocol = hubProtocol.Name }));
             var clientConnection = await waitClientTask.OrTimeout();
 
             await clientConnection.LifetimeTask.OrTimeout();
@@ -858,7 +858,7 @@ public class ServiceConnectionTests : VerifiableLoggedTest
 
             var waitClientTask = ccm.WaitForClientConnectionAsync(clientConnectionId);
             await transportConnection.Application.Output.WriteAsync(
-                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, new Claim[] { }) { Protocol = hubProtocol.Name }));
+                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, Array.Empty<Claim>()) { Protocol = hubProtocol.Name }));
 
             var clientConnection = await waitClientTask.OrTimeout();
 
@@ -957,7 +957,7 @@ public class ServiceConnectionTests : VerifiableLoggedTest
 
             var waitClientTask = ccm.WaitForClientConnectionAsync(clientConnectionId);
             await transportConnection.Application.Output.WriteAsync(
-                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, new Claim[] { }) { Protocol = hubProtocol.Name }));
+                protocol.GetMessageBytes(new OpenConnectionMessage(clientConnectionId, Array.Empty<Claim>()) { Protocol = hubProtocol.Name }));
 
             var clientConnection = await waitClientTask.OrTimeout();
 
@@ -1074,7 +1074,7 @@ public class ServiceConnectionTests : VerifiableLoggedTest
         public override async Task OnConnectedAsync(ConnectionContext connection)
         {
             HandshakeProtocol.WriteResponseMessage(SignalRProtocol.HandshakeResponseMessage.Empty, connection.Transport.Output);
-            _hubProtocol.WriteMessage(new InvocationMessage(_lastWill, new object[0]), connection.Transport.Output);
+            _hubProtocol.WriteMessage(new InvocationMessage(_lastWill, Array.Empty<object>()), connection.Transport.Output);
             await connection.Transport.Output.FlushAsync();
         }
     }

@@ -29,6 +29,7 @@ namespace Microsoft.Azure.SignalR.Tests;
 public class ServiceMessageTests : VerifiableLoggedTest
 {
     private const string SigningKey = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    
     private const string DefaultAudience = "https://localhost";
 
     private const string LocalConnectionString = "endpoint=https://localhost;accessKey=" + SigningKey;
@@ -360,7 +361,7 @@ public class ServiceMessageTests : VerifiableLoggedTest
         };
     }
 
-    private class TestTokenCredential : TokenCredential
+    private sealed class TestTokenCredential : TokenCredential
     {
         public string Token { get; } = Guid.NewGuid().ToString();
 
