@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNet.SignalR;
@@ -427,6 +426,8 @@ public class ServiceConnectionTests(ITestOutputHelper output) : VerifiableLogged
                 .GetJsonMessageFromSingleFramePayload<HubResponseItem>();
 
             Assert.Equal("Connected", message.A[0]);
+
+            Assert.Single(ccm.ClientConnections);
 
             // close transport layer
             proxy.TestConnectionContext.Application.Output.Complete();
