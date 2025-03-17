@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 using System;
 using System.Globalization;
@@ -14,6 +14,7 @@ using Azure.Core.Serialization;
 using Microsoft.AspNetCore.Connections;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Protocol;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -107,23 +108,29 @@ internal static class DependencyInjectionExtensions
                 :
                 new JsonHubProtocol();
 #pragma warning restore CS0618 // Type or member is obsolete
-        }));
-        // add dependencies for persistent mode only
-        services
-            .AddSingleton<ConnectionFactory>()
-            .AddSingleton<IConnectionFactory, ManagementConnectionFactory>()
-            .AddSingleton<ConnectionDelegate>((connectionContext) => Task.CompletedTask)
-            .AddSingleton<IServiceConnectionFactory, ServiceConnectionFactory>()
-            .AddSingleton<MultiEndpointConnectionContainerFactory>()
-            .AddSingleton<IConfigureOptions<HubOptions>, ManagementHubOptionsSetup>();
+            }));
+            //add dependencies for persistent mode only
+            services
+                .AddSingleton<ConnectionFactory>()
+                .AddSingleton<IConnectionFactory, ManagementConnectionFactory>()
+                .AddSingleton<ConnectionDelegate>((connectionContext) => Task.CompletedTask)
+                .AddSingleton<IServiceConnectionFactory, ServiceConnectionFactory>()
+                .AddSingleton<MultiEndpointConnectionContainerFactory>()
+                .AddSingleton<IConfigureOptions<HubOptions>, ManagementHubOptionsSetup>();
 
-        // add dependencies for transient mode only
-        services.AddSingleton<PayloadBuilderResolver>();
+            //add dependencies for transient mode only
+            services.AddSingleton<PayloadBuilderResolver>();
 
-        services.AddRestClient();
-        services.AddSingleton<NegotiateProcessor>();
-        return services.TrySetProductInfo();
-    }
+            services.AddRestClient();
+            services.AddSingleton<NegotiateProcessor>();
+#if NET7_0_OR_GREATER
+            services.AddSingleton<IClientInvocationManager, WeakClientInvocationManager>();
+#else
+            services.AddSingleton<IClientInvocationManager, DummyClientInvocationManager>();
+#endif
+
+            return services.TrySetProductInfo();
+        }
 
     /// <summary>
     /// Adds product info to <see cref="ServiceManagerOptions"/>

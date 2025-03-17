@@ -17,12 +17,22 @@ namespace Microsoft.Azure.SignalR.Management;
 internal class WebSocketsHubLifetimeManager<THub> : ServiceLifetimeManagerBase<THub>, IServiceHubLifetimeManager<THub> where THub : Hub
 {
     private readonly IOptions<ServiceManagerOptions> _serviceManagerOptions;
+#if NET7_0_OR_GREATER
+    private static readonly TimeSpan DefaultInvocationTimeoutTimespan = TimeSpan.FromSeconds(100);
+#endif
+    private readonly IClientInvocationManager _clientInvocationManager;
+    private readonly string _callerId;
+    private readonly string _hub;
 
     public WebSocketsHubLifetimeManager(IServiceConnectionManager<THub> serviceConnectionManager, IHubProtocolResolver protocolResolver,
-        IOptions<HubOptions> globalHubOptions, IOptions<HubOptions<THub>> hubOptions, ILoggerFactory loggerFactory, IOptions<ServiceManagerOptions> serviceManagerOptions) :
+        IOptions<HubOptions> globalHubOptions, IOptions<HubOptions<THub>> hubOptions, ILoggerFactory loggerFactory, IOptions<ServiceManagerOptions> serviceManagerOptions,
+        IClientInvocationManager clientInvocationManager, IServerNameProvider serverNameProvider) :
         base(serviceConnectionManager, protocolResolver, globalHubOptions, hubOptions, loggerFactory?.CreateLogger(nameof(WebSocketsHubLifetimeManager<Hub>)))
     {
         _serviceManagerOptions = serviceManagerOptions ?? throw new ArgumentNullException(nameof(serviceManagerOptions));
+        _clientInvocationManager = clientInvocationManager;
+        _callerId = serverNameProvider.GetName();
+        _hub = typeof(THub).Name;
     }
 
     public Task RemoveFromAllGroupsAsync(string connectionId, CancellationToken cancellationToken = default)
@@ -244,6 +254,49 @@ internal class WebSocketsHubLifetimeManager<THub> : ServiceLifetimeManagerBase<T
         }
         return WriteAsync(message);
     }
+
+#if NET7_0_OR_GREATER
+    public override async Task<T> InvokeConnectionAsync<T>(string connectionId, string methodName, object?[] args, CancellationToken cancellationToken = default)
+    {
+        if (IsInvalidArgument(connectionId))
+        {
+            throw new ArgumentNullException(nameof(connectionId));
+        }
+
+        if (IsInvalidArgument(methodName))
+        {
+            throw new ArgumentNullException(nameof(methodName));
+        }
+
+        // cancellationToken is required to be cancellable.
+
+        using var cts = new CancellationTokenSource(DefaultInvocationTimeoutTimespan);
+        var cancellationTokenInUse = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, cancellationToken).Token;
+           
+        var invocationId = _clientInvocationManager.Caller.GenerateInvocationId(connectionId);
+        var message = AppendMessageTracingId(new ClientInvocationMessage(invocationId, connectionId, _callerId, SerializeAllProtocols(methodName, args, invocationId)));
+        await WriteAsync(message);
+        var task = _clientInvocationManager.Caller.AddInvocation<T>(_hub, connectionId, invocationId, cancellationTokenInUse);
+
+        // Exception handling follows https://source.dot.net/#Microsoft.AspNetCore.SignalR.Core/DefaultHubLifetimeManager.cs,349
+        try
+        {
+            return await task;
+        }
+        catch
+        {
+            _clientInvocationManager.Caller.RemoveInvocation(invocationId);
+            throw;
+        }
+    }
+
+    public override Task SetConnectionResultAsync(string connectionId, CompletionMessage result)
+    {
+        // This method won't get trigger because we will not be sending CompletionMessage back from serverless mode.
+        // this is to honor the interface
+        throw new NotImplementedException();
+    }
+#endif
 
     protected override T AppendMessageTracingId<T>(T message)
     {
