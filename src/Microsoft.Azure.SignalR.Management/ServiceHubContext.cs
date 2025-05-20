@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
+// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -19,6 +19,11 @@ namespace Microsoft.Azure.SignalR.Management
         /// </summary>
         public virtual UserGroupManager UserGroups => null;
         IUserGroupManager IServiceHubContext.UserGroups => UserGroups;
+
+        /// <summary>
+        /// Gets a streaming manager instance which implements <see cref="IStreamingManager"/> that can be used to send streaming messages to clients.
+        /// </summary>
+        public virtual StreamingManager Streaming => null;
 
         public virtual IHubClients Clients => null;
 
