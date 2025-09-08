@@ -81,17 +81,15 @@ internal class AzureTransport : IServiceTransport
             var message = CreateConnectionDataMessage(ConnectionId, value, _serviceProtocol, _serializer, _pool);
             return clientConnection.ServiceConnection.WriteAsync(message);
         }
-        throw new InvalidOperationException("No service connection found when sending message");
+
+        // There is no need to throw when the connection is closed.
+        Log.ConnectionNotFound(_logger, ConnectionId);
+        return Task.CompletedTask;
     }
 
     public void OnReceived(string value)
     {
-        var received = Received;
-        if (received != null)
-        {
-            // TODO: Add log
-            _ = received(value);
-        }
+        _ = SafeInvokeReceived(value);
     }
 
     public void OnDisconnected() => _disconnectTcs.TrySetResult(null);
@@ -110,6 +108,22 @@ internal class AzureTransport : IServiceTransport
         var wrapped = new ConnectionDataMessage(string.Empty, writer.Buffer);
         var message = new ConnectionDataMessage(connectionId, protocol.GetMessageBytes(wrapped));
         return message;
+    }
+
+    private async Task SafeInvokeReceived(string value)
+    {
+        try
+        {
+            var received = Received;
+            if (received != null)
+            {
+                await received(value);
+            }
+        }
+        catch (Exception e)
+        {
+            Log.InvokeReceivedEventFailed(_logger, ConnectionId, e);
+        }
     }
 
     private async Task LifetimeExecute()
@@ -171,17 +185,23 @@ internal class AzureTransport : IServiceTransport
         private static readonly Action<ILogger, string, Exception> ErrorExecuteDisconnectedAction =
             LoggerMessage.Define<string>(LogLevel.Error, new EventId(2, "ErrorExecuteDisconnected"), "Error executing OnDisconnected in Hub for connection {TransportConnectionId}.");
 
-        private static readonly Action<ILogger, string, Exception> _executingConnected =
+        private static readonly Action<ILogger, string, Exception> ExecutingConnectedAction =
             LoggerMessage.Define<string>(LogLevel.Debug, new EventId(3, "ExecutingConnected"), "Executing OnConnected in Hub for connection {TransportConnectionId}.");
 
-        private static readonly Action<ILogger, string, Exception> _executeConnected =
+        private static readonly Action<ILogger, string, Exception> ExecuteConnectedAction =
             LoggerMessage.Define<string>(LogLevel.Debug, new EventId(4, "ExecuteConnected"), "Executed OnConnected in Hub for connection {TransportConnectionId}.");
 
-        private static readonly Action<ILogger, string, Exception> _executingDisconnected =
+        private static readonly Action<ILogger, string, Exception> ExecutingDisconnectedAction =
             LoggerMessage.Define<string>(LogLevel.Debug, new EventId(5, "ExecutingDisconnected"), "Executing OnDisconnected in Hub for connection {TransportConnectionId}.");
 
-        private static readonly Action<ILogger, string, Exception> _executeDisconnected =
+        private static readonly Action<ILogger, string, Exception> ExecuteDisconnectedAction =
             LoggerMessage.Define<string>(LogLevel.Debug, new EventId(6, "ExecuteDisconnected"), "Executed OnDisconnected in Hub for connection {TransportConnectionId}.");
+
+        private static readonly Action<ILogger, string, Exception> ConnectionNotFoundAction =
+            LoggerMessage.Define<string>(LogLevel.Debug, new EventId(7, "ConnectionNotFound"), "Message was not sent because connection {TransportConnectionId} was not found.");
+
+        private static readonly Action<ILogger, string, Exception> InvokeReceivedEventFailedAction =
+            LoggerMessage.Define<string>(LogLevel.Debug, new EventId(8, "InvokeReceivedEventFailed"), "Failed to invoke Receive event for connection {TransportConnectionId}.");
 
         public static void ErrorExecuteConnected(ILogger logger, string connectionId, Exception exception)
         {
@@ -195,21 +215,30 @@ internal class AzureTransport : IServiceTransport
 
         public static void ExecuteConnected(ILogger logger, string connectionId)
         {
-            _executeConnected(logger, connectionId, null);
+            ExecuteConnectedAction(logger, connectionId, null);
         }
 
         public static void ExecuteDisconnected(ILogger logger, string connectionId)
         {
-            _executeDisconnected(logger, connectionId, null);
+            ExecuteDisconnectedAction(logger, connectionId, null);
         }
         public static void ExecutingConnected(ILogger logger, string connectionId)
         {
-            _executingConnected(logger, connectionId, null);
+            ExecutingConnectedAction(logger, connectionId, null);
         }
 
         public static void ExecutingDisconnected(ILogger logger, string connectionId)
         {
-            _executingDisconnected(logger, connectionId, null);
+            ExecutingDisconnectedAction(logger, connectionId, null);
+        }
+        public static void ConnectionNotFound(ILogger logger, string connectionId)
+        {
+            ConnectionNotFoundAction(logger, connectionId, null);
+        }
+
+        public static void InvokeReceivedEventFailed(ILogger logger, string connectionId, Exception exception)
+        {
+            InvokeReceivedEventFailedAction(logger, connectionId, exception);
         }
     }
 }
